@@ -8,6 +8,8 @@
   }
 },  
 
+Sonos Controller is based on the MMM-Sonos Mpdule of tbouron (https://github.com/tbouron/MMM-Sonos). The NodeHelper has been edited a little bit, the MMM-SonosController is completly new. 
+The Module adds control functionality to the MagicMirror Module. 
 
 MIT License
 
