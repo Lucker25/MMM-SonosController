@@ -51,31 +51,13 @@ module.exports = NodeHelper.create({
             break; 
             case 'SET_SONOS_URI': 
               if (sonos != null) {
-               
-              if (payload.uri.includes("spotify"))
-                payload.uri = fixSpotify(payload.uri)
-              
-              sonos.flush().then(result => {
-                sonos.queue(payload.uri).then(result => {
-                  console.log("result", result)
-                  sonos.selectQueue();
-                  sonos.play();
-                }).catch(error => {console.log(error)});
-              });
+                this.play(payload); 
             }
               break;
             default:
               console.info(`Notification with ID "${id}" unsupported. Ignoring...`);
               break;
-            function fixSpotify(uri){
-              uri = uri.slice(uri.indexOf("spotify"))
-              uri = uri.slice(0, (uri.indexOf("?") - uri.length)); 
-              uri = uri.split("%3a").join(":")
-              console.log("fixed", uri)
-              return uri
 
-
-            }
         }
     },
 
@@ -201,5 +183,28 @@ module.exports = NodeHelper.create({
                 });
             });
         });
+    },
+
+    play(meta){
+      let sonos = this.sonos; 
+      console.log(meta) 
+      /*let uri = generateURI(meta)
+      let metadata = generateMetaData(meta); 
+      console.log("metadata", metadata)*/
+      if (meta.uri.includes("spotify")){
+        meta = fixSpotify(meta.uri)
+      }
+     
+      sonos.play(meta).then(result => {
+          console.log("result", result)
+        }).catch(error => {console.log(error)});    
+      
+      function fixSpotify(uri){
+        uri = uri.slice(uri.indexOf("spotify"))
+        uri = uri.slice(0, (uri.indexOf("?") - uri.length)); 
+        uri = uri.split("%3a").join(":")
+        console.log("fixed", uri)
+        return uri
+      }
     }
 });

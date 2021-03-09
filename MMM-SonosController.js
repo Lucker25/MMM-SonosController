@@ -10,6 +10,7 @@
 Module.register("MMM-SonosController",{
   // Default module config.
 	defaults: {
+    showFavorites: true, 
     
   },
 
@@ -35,7 +36,7 @@ Module.register("MMM-SonosController",{
       else if (event.key == "MediaTrackPrevious"){
         that.sendSocketNotification("SONOS_PREVIOUS_SONG", "")
       }
-    });
+    }); // added media buttons just for fun 
 
     let infoDiv = document.createElement("div")
     infoDiv.id = "infoDiv"
@@ -122,13 +123,31 @@ Module.register("MMM-SonosController",{
     let volumeSliderContainer = document.createElement("div"); 
     volumeSliderContainer.className = "sliderDiv"
       let volumeSlider = document.createElement("input"); 
-      volumeSlider.type = "range"
-      volumeSlider.min = "1"
-      volumeSlider.max = "100"
-      volumeSlider.className = "volumeSlider slider"
-      volumeSlider.id = "volumeSlider"
-      volumeSlider.oninput = function() {
-        that.sendSocketNotification("SET_SONOS_VOLUME", {volume: this.value})
+      {
+        volumeSlider.type = "range"
+        volumeSlider.min = "1"
+        volumeSlider.max = "100"
+        volumeSlider.className = "volumeSlider slider"
+        volumeSlider.id = "volumeSlider"
+        volumeSlider.on
+
+        
+        volumeSlider.ontouchstart = function(){
+          this.dragged = true; 
+        }
+        volumeSlider.ontouchend = function(){
+          this.dragged = false; 
+        }
+        volumeSlider.onmousedown = function(){
+          this.dragged = true; 
+        }
+        volumeSlider.onmouseup = function(){
+          this.dragged = false; 
+        }
+
+        volumeSlider.oninput = function() {
+          that.sendSocketNotification("SET_SONOS_VOLUME", {volume: this.value})
+        }
       }
     volumeSliderContainer.appendChild(volumeSlider); 
     wrapper.appendChild(volumeSliderContainer)
@@ -148,15 +167,18 @@ Module.register("MMM-SonosController",{
   },
   socketNotificationReceived: function (notification, payload) {
     console.log(notification, payload); 
+//    if (this.config.zoneName != payload.group.Name) might want to implement different zones
     switch(notification){
       case 'SET_SONOS_CURRENT_TRACK': 
         document.getElementById("title").innerHTML = payload.track.title; 
         if (payload.track.albumArtURI != null){
           document.getElementById("cover").style.display = "block";
-           document.getElementById("cover").src = payload.track.albumArtURI; 
+          document.getElementById("cover").src = payload.track.albumArtURI; 
+          document.getElementById("titleDiv").classList.remove("noCover"); 
         }
         else{
           document.getElementById("cover").style.display = "none";
+          document.getElementById("titleDiv").classList.add("noCover"); 
         }
 
         if (payload.track.duration == 0){
@@ -173,11 +195,14 @@ Module.register("MMM-SonosController",{
           this.setState(payload.state); 
         break; 
       case 'SET_SONOS_VOLUME': 
-        console.log("setvolume")
+        let volumeSlider = document.getElementById("volumeSlider")
+        if (volumeSlider.dragged == true) return; 
+        console.log("setvolume", payload.volume)
         document.getElementById("volumeSlider").value = payload.volume; 
         break; 
       case 'SET_SONOS_FAVORITES': 
-        this.createList(payload.items);
+        if (this.config.showFavorites)
+          this.createList(payload.items);
         break; 
       default: 
 

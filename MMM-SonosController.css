@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    width: 28vw;
+    width: 32vw;
     align-items: center;
     padding:8px;
   }
@@ -36,8 +36,12 @@
     height: 100%;
     width: 100%;
     justify-content: flex-start;
-    max-width: 16vw;
+    max-width: 60%;
   }
+  .MMM-SonosController .titleDiv.noCover{
+    max-width:100%;
+  }
+
 
   .MMM-SonosController .title{
     font-size: 2.2rem;
