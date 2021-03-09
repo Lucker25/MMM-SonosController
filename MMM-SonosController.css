@@ -1,0 +1,137 @@
+.MMM-SonosController .sonosModuleDiv{
+    background-color:transparent;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 28vw;
+    align-items: center;
+    padding:8px;
+  }
+
+  .MMM-SonosController .buttonDiv{
+    padding-top: 3vh;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    justify-content: space-evenly;
+  }
+
+  .MMM-SonosController .infoDiv{
+    padding-top: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    align-items: flex-end;
+  }
+
+  .MMM-SonosController #artist{
+    font-size: 1.5rem;
+  }
+  .MMM-SonosController .titleDiv{
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    justify-content: flex-start;
+    max-width: 16vw;
+  }
+
+  .MMM-SonosController .title{
+    font-size: 2.2rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .MMM-SonosController .btnClass{
+    text-transform: uppercase;
+    color: #646464; 
+    outline: none;
+    box-shadow: 0;
+    border: none; 
+    background-color: transparent;
+    font-size: 3rem; 
+  }
+
+  .MMM-SonosController .cover{
+    padding-right: 1vh;
+    height: 100%;
+    width: 40%;
+  }
+
+  .MMM-SonosController .sliderDiv{
+    padding-top: 4vh; 
+    width: 100%; 
+    height: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .MMM-SonosController .volumeSlider{
+    width: 80%; 
+    height: 0.8rem;
+    -webkit-appearance: none;
+    background: #5f5f5f9d;
+    border-radius: 1rem;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+  }
+
+  .MMM-SonosController .volumeSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%; 
+    background: #9e9e9e9f;
+    cursor: pointer;
+  }
+
+  .MMM-SonosController .volumeSlider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #4CAF50;
+    cursor: pointer;
+  }
+
+  .MMM-SonosController .favoritesListDiv{
+    width: 100%;
+    margin-top: 4vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: 33vh; 
+    display:flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+  }
+  .MMM-SonosController .favoritesListDiv:focus{
+    overflow-y: scroll;
+  }
+  .MMM-SonosController .favoritesListDiv::-webkit-scrollbar {
+    display:contents;
+    background: rgba(0, 0, 0, 0.1);
+    width: 0.5vw;
+  }
+
+  /* Track */
+  .MMM-SonosController .favoritesListDiv::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0);
+  }
+ 
+  /* Handle */
+  .MMM-SonosController .favoritesListDiv::-webkit-scrollbar-thumb {
+    background: rgba(189, 189, 189, 0.5); 
+    border-radius: 10px;
+  }
+
+  .MMM-SonosController .favoriteListElement{
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space:nowrap;
+    
+  }
