@@ -1,9 +1,11 @@
 
 {
+  
   module: "MMM-SonosController",
   header: "SONOS",
   position: "top_right", 
   config:{
+    showFavorites: true, //shows favorites, or doesn´t 
     
   }
 },  

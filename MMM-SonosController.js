@@ -132,21 +132,16 @@ Module.register("MMM-SonosController",{
         volumeSlider.on
 
         
-        volumeSlider.ontouchstart = function(){
-          this.dragged = true; 
-        }
-        volumeSlider.ontouchend = function(){
-          this.dragged = false; 
-        }
-        volumeSlider.onmousedown = function(){
-          this.dragged = true; 
-        }
-        volumeSlider.onmouseup = function(){
-          this.dragged = false; 
-        }
-
-        volumeSlider.oninput = function() {
-          that.sendSocketNotification("SET_SONOS_VOLUME", {volume: this.value})
+        volumeSlider.oninput = function(){ // Timeout for not resetting the volume to an old value and wait until the input has ended, else problems on rpi
+          if (volumeSlider.delay){
+            clearTimeout(volumeSlider.delay)
+          }
+          volumeSlider.delay = setTimeout(()=>{
+            that.sendSocketNotification("SET_SONOS_VOLUME", {volume: this.value})
+            clearTimeout(volumeSlider.delay)
+            volumeSlider.delay = undefined; 
+          },500); 
+        
         }
       }
     volumeSliderContainer.appendChild(volumeSlider); 

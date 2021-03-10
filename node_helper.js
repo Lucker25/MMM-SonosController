@@ -2,6 +2,7 @@ const NodeHelper = require('node_helper');
 const {AsyncDeviceDiscovery, Listener: listener} = require('../../node_modules/sonos');
 const Sonos  = require('../../node_modules/sonos')
 const Helpers = require('../../node_modules/sonos/lib/helpers')
+const request = require("request")
 
 
 module.exports = NodeHelper.create({
@@ -10,6 +11,7 @@ module.exports = NodeHelper.create({
     asyncDevice: null,
     sonos: null, 
     library: null,
+    zone: "Küche",
 
     init: function() {
         this.discovery = new AsyncDeviceDiscovery();
@@ -185,26 +187,37 @@ module.exports = NodeHelper.create({
         });
     },
 
-    play(meta){
+    async play(meta){
       let sonos = this.sonos; 
       console.log(meta) 
+      //console.log("decoded URI): ", decodeURIComponent(meta.uri)); 
+      let uri = decodeURIComponent(meta.uri); 
+      console.log("decoded URI): ", uri); 
+      request('http://raspberrypi:5005/'+this.zone+'/favorite/'+meta.title);
       /*let uri = generateURI(meta)
       let metadata = generateMetaData(meta); 
       console.log("metadata", metadata)*/
-      if (meta.uri.includes("spotify")){
+      /*if (meta.uri.includes("spotify")){
         meta = fixSpotify(meta.uri)
-      }
+      }*/
      
-      sonos.play(meta).then(result => {
+      /*sonos.play(uri).then(result => {
           console.log("result", result)
-        }).catch(error => {console.log(error)});    
+        }).catch(error => {console.log(error)});    */
+        
+      /*sonos.flush().then(result => {
+        sonos.queue(payload.uri).then(result => {
+          console.log("result", result)
+          sonos.selectQueue();
+          sonos.play();
+        }).catch(error => {console.log(error)});
+      });*/
       
-      function fixSpotify(uri){
-        uri = uri.slice(uri.indexOf("spotify"))
-        uri = uri.slice(0, (uri.indexOf("?") - uri.length)); 
-        uri = uri.split("%3a").join(":")
-        console.log("fixed", uri)
-        return uri
-      }
+  /*    await sonos.flush();
+      await sonos.queue(uri);
+      await sonos.selectQueue();
+//      await sonos.selectTrack(trackNumber);
+      await sonos.play();*/
+
     }
 });
