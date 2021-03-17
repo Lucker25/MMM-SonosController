@@ -1,24 +1,25 @@
-.MMM-SonosController .sonosModuleDiv {
+.AdditionalController .sonosModuleDiv {
   background-color: transparent;
   display: flex;
   flex-direction: row;
-  max-width: 70vw;
+  max-width: 60vw;
   align-items:flex-start;
   padding: 8px;
+  width: 100%;
 }
 
-.MMM-SonosController .controlDiv {
+.AdditionalController .controlDiv {
   flex-direction: column;
   height: 100%;
   width: 100%;
 }
 
-.MMM-SonosController .controlDiv .withFav{
-  width: 45%;
+.AdditionalController .controlDiv .withFav{
+  width: 60%;
 }
 
 
-.MMM-SonosController .buttonDiv {
+.AdditionalController .buttonDiv {
   padding-top: 3vh;
   display: flex;
   flex-direction: row;
@@ -27,7 +28,7 @@
   justify-content: space-evenly;
 }
 
-.MMM-SonosController .infoDiv {
+.AdditionalController .infoDiv {
   padding-top: 0.5rem;
   display: flex;
   flex-direction: row;
@@ -36,10 +37,10 @@
   align-items: flex-end;
 }
 
-.MMM-SonosController #artist {
+.AdditionalController #artist {
   font-size: 1.5rem;
 }
-.MMM-SonosController .titleDiv {
+.AdditionalController .titleDiv {
   text-align: left;
   display: flex;
   flex-direction: column;
@@ -48,17 +49,17 @@
   justify-content: flex-start;
   max-width: 60%;
 }
-.MMM-SonosController .titleDiv.noCover {
+.AdditionalController .titleDiv.noCover {
   max-width: 100%;
 }
 
-.MMM-SonosController .title {
+.AdditionalController .title {
   font-size: 2.2rem;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
 }
-.MMM-SonosController .btnClass {
+.AdditionalController .btnClass {
   text-transform: uppercase;
   color: #646464;
   outline: none;
@@ -68,17 +69,17 @@
   font-size: 3.4rem;
 }
 
-.MMM-SonosController .btnClass:active {
+.AdditionalController .btnClass:active {
   color: wheat;
 }
 
-.MMM-SonosController .cover {
+.AdditionalController .cover {
   padding-right: 1vh;
   height: 100%;
   width: 40%;
 }
 
-.MMM-SonosController .sliderDiv {
+.AdditionalController .sliderDiv {
   padding-top: 6vh;
   width: 100%;
   height: 100%;
@@ -86,7 +87,7 @@
   justify-content: center;
 }
 
-.MMM-SonosController .volumeSlider {
+.AdditionalController .volumeSlider {
   width: 80%;
   height: 0.8rem;
   -webkit-appearance: none;
@@ -98,7 +99,7 @@
   transition: opacity 0.2s;
 }
 
-.MMM-SonosController .volumeSlider::-webkit-slider-thumb {
+.AdditionalController .volumeSlider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 2.5rem;
@@ -107,13 +108,13 @@
   background: #8a8a8a;
   cursor: pointer;
 }
-.MMM-SonosController .volumeSlider.active::-webkit-slider-thumb {
+.AdditionalController .volumeSlider.active::-webkit-slider-thumb {
   width: 2.9rem;
   height: 2.9rem;
   background: wheat;
 }
 
-.MMM-SonosController .favoritesListDiv {
+.AdditionalController .favoritesListDiv {
   /*box-shadow: inset 0px 11px 8px -10px #CCC, inset 0px -11px 8px -10px #CCC; */
   width: 40%;
   /*margin-top: 4vh;*/
@@ -125,33 +126,33 @@
   flex-direction: column;
   -webkit-overflow-scrolling: touch;
 }
-.MMM-SonosController .favoritesListDiv:active {
+.AdditionalController .favoritesListDiv:active {
   overflow-y: scroll;
 }
-.MMM-SonosController .favoritesListDiv::-webkit-scrollbar {
+.AdditionalController .favoritesListDiv::-webkit-scrollbar {
   display: contents;
   background: rgba(0, 0, 0, 0.1);
   width: 0.5vw;
 }
 
 /* Track */
-.MMM-SonosController .favoritesListDiv::-webkit-scrollbar-track {
+.AdditionalController .favoritesListDiv::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0);
 }
 
 /* Handle */
-.MMM-SonosController .favoritesListDiv::-webkit-scrollbar-thumb {
+.AdditionalController .favoritesListDiv::-webkit-scrollbar-thumb {
   background: rgba(189, 189, 189, 0.5);
   border-radius: 10px;
 }
 
-.MMM-SonosController .favoritesListDiv .favoriteListElement {
+.AdditionalController .favoritesListDiv .favoriteListElement {
   display: inline-block;
   line-height: 1.8em;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.MMM-SonosController .favoriteListElement:active {
+.AdditionalController .favoriteListElement:active {
   color: wheat;
 }

@@ -7,16 +7,16 @@
  * jshint esversion: 6
  */
 
-Module.register("MMM-SonosController", {
+Module.register("AdditionalController", {
   // Default module config.
   defaults: {
-    showFavorites: true,
-    additionalController: "AdditionalController"
+    showFavorites: true, 
+    hostController: "MMM-SonosController"
   },
 
   // Define styles.
   getStyles: function () {
-    return ["MMM-SonosController.css"];
+    return ["AdditionalController.css"];
   },
   // Override dom generator.
   getDom: function () {
@@ -31,11 +31,11 @@ Module.register("MMM-SonosController", {
 
     document.addEventListener("keydown", function (event) {
       if (event.key == "MediaPlayPause") {
-        that.sendSocketNotification("SONOS_TOGGLE_PLAY", "");
+        that.sendNotification("SONOS_TOGGLE_PLAY", "");
       } else if (event.key == "MediaTrackNext") {
-        that.sendSocketNotification("SONOS_NEXT_SONG", "");
+        that.sendNotification("SONOS_NEXT_SONG", "");
       } else if (event.key == "MediaTrackPrevious") {
-        that.sendSocketNotification("SONOS_PREVIOUS_SONG", "");
+        that.sendNotification("SONOS_PREVIOUS_SONG", "");
       }
     }); // added media buttons just for fun
 
@@ -78,7 +78,7 @@ Module.register("MMM-SonosController", {
 
     backButton.addEventListener("click", function (e) {
       console.log("click back");
-      that.sendSocketNotification("SONOS_PREVIOUS_SONG", "");
+      that.sendNotification("SONOS_PREVIOUS_SONG", "");
     });
     var image = document.createElement("i");
     backButton.innerHTML = "";
@@ -93,7 +93,7 @@ Module.register("MMM-SonosController", {
 
     playButton.addEventListener("click", function (e) {
       console.log("click play");
-      that.sendSocketNotification("SONOS_TOGGLE_PLAY", "");
+      that.sendNotification("SONOS_TOGGLE_PLAY", "");
     });
     var image = document.createElement("i");
     playButton.innerHTML = "";
@@ -108,7 +108,7 @@ Module.register("MMM-SonosController", {
 
     nextButton.addEventListener("click", function (e) {
       console.log("click next");
-      that.sendSocketNotification("SONOS_NEXT_SONG", "");
+      that.sendNotification("SONOS_NEXT_SONG", "");
     });
     var image = document.createElement("i");
     nextButton.innerHTML = "";
@@ -136,7 +136,7 @@ Module.register("MMM-SonosController", {
           clearTimeout(volumeSlider.delay);
         }
         volumeSlider.delay = setTimeout(() => {
-          that.sendSocketNotification("SET_SONOS_VOLUME", {
+          that.sendNotification("SET_SONOS_VOLUME", {
             volume: this.value
           });
           clearTimeout(volumeSlider.delay);
@@ -156,14 +156,13 @@ Module.register("MMM-SonosController", {
   start: function () {
     let that = this;
     Log.info("Starting module: " + this.name, this);
-    this.sendSocketNotification("SONOS_START", "");
   },
   sonos: {
     zone: ""
   },
-  socketNotificationReceived: function (notification, payload) {
-    console.log(notification, payload);
-    this.sendNotification(notification, payload);
+  notificationReceived: function (notification, payload, sender) {
+    if (sender == undefined) return;
+    if(sender.name != this.config.hostController) return;
     //    if (this.config.zoneName != payload.group.Name) might want to implement different zones
     switch (notification) {
       case "SET_SONOS_CURRENT_TRACK":
@@ -202,12 +201,6 @@ Module.register("MMM-SonosController", {
         break;
     }
   },
-  notificationReceived: function(notification, payload, sender){
-    if (sender == undefined) return;
-    if(sender.name != this.config.additionalController) return;
-    this.sendSocketNotification(notification, payload)
-
-  },
   favListDiv: null,
   createList: function (items) {
     let that = this;
@@ -227,7 +220,7 @@ Module.register("MMM-SonosController", {
       span.className = "favoriteListElement";
       span.addEventListener("click", function (e) {
         console.log(item.title);
-        that.sendSocketNotification("SET_SONOS_URI", item);
+        that.sendNotification("SET_SONOS_URI", item);
       });
       this.favListDiv.appendChild(span);
     });
