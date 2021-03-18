@@ -220,13 +220,25 @@ module.exports = NodeHelper.create({
   async play(meta) {
     let sonos = this.sonos;
     console.log(meta);
-    //console.log("decoded URI): ", decodeURIComponent(meta.uri));
-    let uri = decodeURIComponent(meta.uri);
-    console.log("decoded URI): ", uri);
+    console.log("decoded URI: ", decodeURIComponent(meta.uri));
     const that = this; 
-    request("http://raspberrypi:5005/" + this.zone + "/favorite/" + meta.title, function(error, response, body){
-      that.sendSocketNotification("RESPONSE", response)
-    });
+
+    if (meta.uri.includes("spotify") ){           // workaround for playing spotify playlists via node sonos -> uri doesnt work          
+      let uri = fixSpotify(meta.uri)
+      sonos.play(uri).then(result => {
+        console.log("result", result)
+      }).catch(error => {console.log(error)});    
+    }
+    else{
+      sonos.flush().then(result => {
+        sonos.setAVTransportURI(meta.uri).then(result => {
+          console.log(result)
+        }).catch(error => {console.warn(error)}); 
+      });
+    }
+
+    /*
+    
     /*let uri = generateURI(meta)
       let metadata = generateMetaData(meta); 
       console.log("metadata", metadata)*/
@@ -246,10 +258,12 @@ module.exports = NodeHelper.create({
         }).catch(error => {console.log(error)});
       });*/
 
-    /*    await sonos.flush();
-      await sonos.queue(uri);
-      await sonos.selectQueue();
-//      await sonos.selectTrack(trackNumber);
-      await sonos.play();*/
+      function fixSpotify(uri){
+        uri = uri.slice(uri.indexOf("spotify"))
+        uri = uri.slice(0, (uri.indexOf("?") - uri.length)); 
+        uri = uri.split("%3a").join(":")
+        console.log("fixed", uri)
+        return uri
+      }
   }
 });

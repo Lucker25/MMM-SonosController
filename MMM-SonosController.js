@@ -233,7 +233,7 @@ Module.register("MMM-SonosController", {
     });
 
     this.wrapper.appendChild(this.favListDiv);
-    this.wrapper.classList.add("withFav");
+    this.wrapper.querySelector("#controlDiv").classList.add("withFav");
   },
   setState: function (state) {
     let playButton = this.wrapper.querySelector("#playButton");
