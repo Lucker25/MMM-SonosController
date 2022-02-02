@@ -1,11 +1,14 @@
 const NodeHelper = require("node_helper");
-const {
-  AsyncDeviceDiscovery,
-  Listener: listener
-} = require("../../node_modules/sonos");
-const Sonos = require("../../node_modules/sonos");
-const Helpers = require("../../node_modules/sonos/lib/helpers");
+//const {AsyncDeviceDiscovery, Listener: listener} = require("../../node_modules/sonos");
+//const Sonos = require("../../node_modules/sonos");
+//const Helpers = require("../../node_modules/sonos/lib/helpers");
 const request = require("request");
+const SonosManager = require("../../node_modules/@svrooij/sonos").SonosManager
+const SonosEvents = require('../../node_modules/@svrooij/sonos/lib/models/sonos-events').SonosEvents
+const { XMLParser } = require('../../node_modules/fast-xml-parser')
+const parser = require('../../node_modules/fast-xml-parser')
+
+const MUSIC_SERVICES = require('./Db-MusicServices.json')
 
 module.exports = NodeHelper.create({
   discovery: null,
@@ -15,11 +18,45 @@ module.exports = NodeHelper.create({
   zone: "Küche",
 
   init: function () {
-    this.discovery = new AsyncDeviceDiscovery();
+    let that = this;
+    this.manager = new SonosManager()
+    this.manager.InitializeWithDiscovery(10)
+    .then(() => {
+      //that.manager.Devices.forEach(d => console.log('Device %s (%s) is joined in %s', d.Name, d.uuid, d.GroupName))
+      that.getLibrary()
+      that.manager.Devices.forEach(d => {
+        let name = d.name
+        console.log('Device %s (%s) is joined in %s', d.Name, d.Uuid, d.GroupName)
+        
+        d.Events.on(SonosEvents.CurrentTrackMetadata, metadata => {
+          //console.log('Current Track metadata for %s', d.Name)
+          this.sendSocketNotification("SET_SONOS_CURRENT_TRACK", {track:metadata
+          });
+        })
+        d.Events.on(SonosEvents.CurrentTransportState, state => {
+          //console.log('New state for %s %s', d.Name, state)
+        })
+        d.Events.on(SonosEvents.CurrentTransportStateSimple, state => {
+          //console.log('New simple state for %s %s', d.Name, state)
+          this.sendSocketNotification("SET_SONOS_PLAY_STATE", {
+            name,
+            state
+          });
+        })
+        d.Events.on(SonosEvents.Volume , volume => {
+          //console.log('New volume for %s %s', d.Name, volume)
+          this.sendSocketNotification("SET_SONOS_VOLUME", {
+            name,
+            volume
+          });
+        })
+      })
+    })
+    .catch(console.error)
   },
 
   stop: function () {
-    if (listener.isListening()) {
+    /*if (listener.isListening()) {
       listener
         .stopListener()
         .then(() => {
@@ -30,33 +67,31 @@ module.exports = NodeHelper.create({
             `Failed to stop listeners to Sonos devices, connections might be dangling: ${error.message}`
           );
         });
-    }
+    }*/
   },
 
   socketNotificationReceived: function (id, payload) {
-    let sonos = this.sonos;
+    //let sonos = this.sonos;
     switch (id) {
       case "SONOS_START":
-        this.discoverGroups();
-
+        this.initManager();
         break;
       case "SONOS_TOGGLE_PLAY":
-        this.sendSocketNotification("SONOS", sonos);
-        sonos.togglePlayback();
+        this.manager.devices[0].TogglePlayback();
         break;
       case "SONOS_NEXT_SONG":
-        if (sonos != null) sonos.next();
+        this.manager.devices[0].Next()
         break;
       case "SONOS_PREVIOUS_SONG":
-        if (sonos != null) sonos.previous();
+        this.manager.devices[0].Previous()
         break;
       case "SET_SONOS_VOLUME":
-        if (sonos != null) sonos.setVolume(payload.volume);
+        this.manager.devices[0].SetVolume(payload.volume)
         break;
       case "SET_SONOS_URI":
-        if (sonos != null) {
+        
           this.play(payload);
-        }
+        
         break;
       default:
         console.info(`Notification with ID "${id}" unsupported. Ignoring...`);
@@ -64,206 +99,246 @@ module.exports = NodeHelper.create({
     }
   },
 
-  discoverGroups: function (attempts = 0) {
+  initManager: function (attempts = 0) {
     let that = this;
-    if (!this.asyncDevice) {
-      this.asyncDevice = this.discovery.discover().then((device) => {
-        listener.on("ZonesChanged", () => {
-          console.log(`Zones have changed. Rediscovering all groups ...`);
-          this.discoverGroups();
-        });
-        return listener.subscribeTo(device).then(() => {
-          return device;
-        });
-      });
-    }
-    this.asyncDevice
-      .then((device) => {
-        return device.getAllGroups();
-      })
-      .then((groups) => {
-        this.setGroups(groups);
-        groups.forEach((group) => {
-          that.sonos = group.CoordinatorDevice(); //this only works with one Group
-          that.sonos.setSpotifyRegion(Sonos.SpotifyRegion.EU);
-        });
-        this.getLibrary(groups);
-      })
-      .catch((error) => {
-        attempts++;
-        const timeout = Math.min(Math.pow(attempts, 2), 30);
-        console.error(
-          `Failed to get groups: ${error.message}. Retrying in ${timeout} seconds ...`
-        );
-        that.sonos = null; // only one group
-        if (listener.isListening()) {
-          listener
-            .stopListener()
-            .then(() => {
-              console.debug("Stopped all listeners to Sonos devices");
-            })
-            .catch((error) => {
-              console.error(
-                `Failed to stop listeners to Sonos devices, connections might be dangling: ${error.message}`
-              );
-            });
-        }
-        this.asyncDevice = null;
-        setTimeout(() => {
-          this.discoverGroups(attempts);
-        }, timeout * 1000);
-      });
+    that.getLibrary()
+    that.manager.Devices[0].GetState().then( d=> {
+      //console.log(d);
+      this.sendSocketNotification("SET_SONOS_CURRENT_TRACK", {"track":d.positionInfo.TrackMetaData});
+      this.sendSocketNotification("SET_SONOS_VOLUME", {"volume":d.volume});
+      this.sendSocketNotification("SET_SONOS_PLAY_STATE", {"state":d.transportState});
+
+    })
   },
 
   getLibrary(groups) {
-    Promise.all(
-      groups.map((group) => {
-        const sonos = group.CoordinatorDevice();
-        return Promise.all([sonos.getFavorites()]).then((favs) => {
-          this.sendSocketNotification("SET_SONOS_FAVORITES", favs[0]);
-        });
+    this.manager.devices[0].GetFavorites()
+      .then(favList =>{
+        this.sendSocketNotification("SET_SONOS_FAVORITES", favList);
       })
-    );
-  },
-
-  setGroups(groups) {
-    Promise.all(
-      groups.map((group) => {
-        const sonos = group.CoordinatorDevice();
-        return Promise.all([
-          sonos.currentTrack(),
-          sonos.getCurrentState(),
-          sonos.getVolume(),
-          sonos.getMuted()
-        ]).then((data) => {
-          return {
-            group,
-            track: data[0],
-            state: data[1],
-            volume: data[2],
-            isMuted: data[3]
-          };
-        });
-      })
-    )
-      .then((items) => {
-        this.sendSocketNotification(
-          "SET_SONOS_GROUPS",
-          items.reduce((map, item) => {
-            map[item.group.ID] = item;
-            return map;
-          }, {})
-        );
-        return items;
-      })
-      .then((groups) => {
-        this.setListeners(groups.map((item) => item.group));
-      });
-  },
-
-  setListeners: function (groups) {
-    groups.forEach((group) => {
-      console.log(
-        `Registering listeners for group "${group.Name}" (host "${group.host}")`
-      );
-
-      const sonos = group.CoordinatorDevice();
-
-      sonos.on("Mute", (isMuted) => {
-        console.log("This speaker is %s.", isMuted ? "muted" : "unmuted");
-      });
-
-      sonos.on("CurrentTrack", (track) => {
-        console.log(
-          `[Group ${group.Name} - ${group.host}] Track changed to "${track.title}" by "${track.artist}"`
-        );
-        this.sendSocketNotification("SET_SONOS_CURRENT_TRACK", {
-          group,
-          track
-        });
-      });
-
-      sonos.on("Volume", (volume) => {
-        console.log(
-          `[Group ${group.Name} - ${group.host}] Volume changed to "${volume}"`
-        );
-        this.sendSocketNotification("SET_SONOS_VOLUME", {
-          group,
-          volume
-        });
-      });
-
-      sonos.on("Muted", (isMuted) => {
-        console.log(
-          `[Group ${group.Name} - ${group.host}] Group is ${
-            isMuted ? "muted" : "unmuted"
-          }`
-        );
-        this.sendSocketNotification("SET_SONOS_MUTE", {
-          group,
-          isMuted
-        });
-      });
-
-      sonos.on("PlayState", (state) => {
-        console.log(
-          `[Group ${group.Name} - ${group.host}] Play state change to "${state}"`
-        );
-        this.sendSocketNotification("SET_SONOS_PLAY_STATE", {
-          group,
-          state
-        });
-      });
-    });
   },
 
   async play(meta) {
-    let sonos = this.sonos;
-    console.log(meta);
-    console.log("decoded URI: ", decodeURIComponent(meta.uri));
-    const that = this; 
+    console.log(meta)
+    let device = this.manager.devices[0]
+    //this.manager.devices[0].SetAVTransportURI(meta.TrackUri)
+      /*this.manager.devices[0].SetAVTransportURI({
+        InstanceID: 0, CurrentURI: meta.TrackUri, CurrentURIMetaData: meta
+      }).then(
+        this.manager.devices[0].Play()
+      )*/
 
-    if (meta.uri.includes("spotify") ){           // workaround for playing spotify playlists via node sonos -> uri doesnt work          
-      let uri = fixSpotify(meta.uri)
-      sonos.play(uri).then(result => {
-        console.log("result", result)
-      }).catch(error => {console.log(error)});    
-    }
-    else{
-      sonos.flush().then(result => {
-        sonos.setAVTransportURI(meta.uri).then(result => {
-          console.log(result)
-        }).catch(error => {console.warn(error)}); 
-      });
-    }
+      const favorites = await device.ContentDirectoryService.Browse({
+        'ObjectID': 'FV:2', 'BrowseFlag': 'BrowseDirectChildren', 'Filter': '*', 'StartingIndex': 0,
+        'RequestedCount': 1000, 'SortCriteria': ''
+      })
+      const favoritesArray = await parseBrowseToArray(favorites, 'item')
+      const foundIndex = favoritesArray.findIndex((item) => {
+        return (item.title.includes(meta.Title))
+      })
+      console.log(favoritesArray[foundIndex])
 
-    /*
-    
-    /*let uri = generateURI(meta)
-      let metadata = generateMetaData(meta); 
-      console.log("metadata", metadata)*/
-    /*if (meta.uri.includes("spotify")){
-        meta = fixSpotify(meta.uri)
-      }*/
-
-    /*sonos.play(uri).then(result => {
-          console.log("result", result)
-        }).catch(error => {console.log(error)});    */
-
-    /*sonos.flush().then(result => {
-        sonos.queue(payload.uri).then(result => {
-          console.log("result", result)
-          sonos.selectQueue();
-          sonos.play();
-        }).catch(error => {console.log(error)});
-      });*/
-
-      function fixSpotify(uri){
-        uri = uri.slice(uri.indexOf("spotify"))
-        uri = uri.slice(0, (uri.indexOf("?") - uri.length)); 
-        uri = uri.split("%3a").join(":")
-        console.log("fixed", uri)
-        return uri
+      const exportData = {
+        'uri': favoritesArray[foundIndex].uri,
+        'metadata': favoritesArray[foundIndex].metadata,
+        'queue': (favoritesArray[foundIndex].processingType === 'queue')
       }
+      console.log(exportData)
+      if (exportData.queue) {
+        await device.AVTransportService.RemoveAllTracksFromQueue()
+        await device.AVTransportService.AddURIToQueue({
+          InstanceID: 0, EnqueuedURI: exportData.uri, EnqueuedURIMetaData: exportData.metadata,
+          DesiredFirstTrackNumberEnqueued: 0, EnqueueAsNext: true
+        })
+        await device.SwitchToQueue()
+        
+      } else {
+        await device.AVTransportService.SetAVTransportURI({
+          InstanceID: 0, CurrentURI: exportData.uri, CurrentURIMetaData: exportData.metadata
+        })
+      }
+      await device.Play()
+
   }
 });
+
+async function decodeHtmlEntity(htmlData){
+  
+  if (typeof htmlData !== 'string') {
+    throw new Error('htmlData is not string')
+  }
+  return String(htmlData).replace(/(&lt;|&gt;|&apos;|&quot;|&amp;)/g, substring => {
+    switch (substring) {
+    case '&lt;': return '<'
+    case '&gt;': return '>'
+    case '&apos;': return '\''
+    case '&quot;': return '"'
+    case '&amp;': return '&'
+    }
+  })
+}
+
+function isTruthy (input) {
+  
+  return !(typeof input === 'undefined' || input === null
+    //this avoids NaN, positive, negative Infinite
+    || (typeof input === 'number' && !Number.isFinite(input)))
+}
+
+function isTruthyStringNotEmpty(input) {
+  return !(typeof input === 'undefined' || input === null
+    //this avoids NaN, positive, negative Infinite, not empty string
+    || (typeof input === 'number' && !Number.isFinite(input))
+    || typeof input !== 'string' || input === '')
+}
+
+function isTruthyProperty(nestedObj, pathArray){
+  if (!Array.isArray(pathArray)) {
+    throw new Error('2nd parameter is not array')
+  }
+  if (pathArray.length === 0) {
+    throw new Error('2nd parameter is empty array')
+  } 
+  const property = pathArray.reduce(
+    (obj, key) => (obj && obj[key] !== 'undefined' ? obj[key] : undefined),
+    nestedObj
+  )
+
+  return isTruthy(property)
+}
+
+async function getMusicServiceId(uri) {
+  let sid = '' // default even if uri undefined.
+  if (isTruthyStringNotEmpty(uri)) {
+    const decodedUri = await decodeHtmlEntity(uri)
+    const positionStart = decodedUri.indexOf('?sid=') + '$sid='.length
+    const positionEnd = decodedUri.indexOf('&flags=')
+    if (positionStart > 1 && positionEnd > positionStart) {
+      sid = decodedUri.substring(positionStart, positionEnd)
+    }
+  }
+  return sid
+}
+
+async function getMusicServiceName(sid){
+  let serviceName = '' // default even if sid is blank
+  if (sid !== '') {
+    const list = MUSIC_SERVICES
+    const index = list.findIndex((service) => (service.sid === sid))
+    if (index >= 0) {
+      serviceName = list[index].name
+    }  
+  } 
+  return serviceName
+}
+
+async function parseBrowseToArray(browseOutcome, itemName){
+  if (!isTruthy(browseOutcome)) {
+    throw new Error('parameter browse input is missing')
+  }
+  if (!isTruthyStringNotEmpty(itemName)) {
+    throw new Error('parameter item name such as container is missing')
+  }
+  if (browseOutcome.NumberReturned < 1) {
+    return [] // no My Sonos favorites
+  }
+
+  const decodedResult = await decodeHtmlEntity(browseOutcome['Result'])
+  // stopNodes because we use that value for export and import and no further processing
+  const browseJson = await parser.parse(decodedResult, {
+    'arrayMode': false, // watch fields of type array!
+    'ignoreAttributes': false,
+    'attributeNamePrefix': '_', 
+    'stopNodes': ['r:resMD'], // for My-Sonos items, play export!
+    'parseNodeValue': false, // is default - example Title 49 will otherwise be converted
+    'parseAttributeValue': false,  // is default
+    'textNodeName': '#text'  //is default, just to remember
+  })  
+  if (!isTruthyProperty(browseJson, ['DIDL-Lite'])) {
+    throw new Error(`${PACKAGE_PREFIX} invalid response Browse: missing DIDL-Lite`)
+  }
+
+  // The following section is because of fast-xml-parser with 'arrayMode' = false
+  // if only ONE item then convert it to array with one 
+  let itemsAlwaysArray = []
+  const path = ['DIDL-Lite', itemName]
+  if (isTruthyProperty(browseJson, path)) {
+    const itemsOrOne = browseJson[path[0]][path[1]]
+    if (Array.isArray(itemsOrOne)) { 
+      itemsAlwaysArray = itemsOrOne.slice()
+    } else { // single item  - convert to array
+      itemsAlwaysArray = [itemsOrOne]
+    }
+  }
+
+  // transform properties
+  const transformedItems = await Promise.all(itemsAlwaysArray.map(async (item) => {
+    const newItem = {
+      'id': '', // required
+      'title': '', // required
+      'artist': '',
+      'album': '',
+      'description': '',
+      'uri': '',
+      'artUri': '',
+      'metadata': '',
+      'sid': '',
+      'serviceName': '',
+      'upnpClass': '', // might be overwritten
+      'processingType': 'queue' // has to be updated in calling program
+    }
+
+    // String() not necessary, see parsing options. But used in case 
+    // there might be a number.
+    // special property, required. 
+    if (!isTruthyProperty(item, ['_id'])) {
+      throw new Error(`${PACKAGE_PREFIX} id is missing`) // should never happen
+    }
+    newItem.id = String(item['_id'])
+    if (!isTruthyProperty(item, ['dc:title'])) {
+      throw new Error(`${PACKAGE_PREFIX} title is missing`) // should never happen
+    }
+    newItem.title = await decodeHtmlEntity(String(item['dc:title']))
+
+    // properties, optional
+    if (isTruthyProperty(item, ['dc:creator'])) {
+      newItem.artist = await decodeHtmlEntity(String(item['dc:creator']))
+    }
+
+    if (isTruthyProperty(item, ['upnp:album'])) {
+      newItem.album = await decodeHtmlEntity(String(item['upnp:album']))
+    }
+
+    if (isTruthyProperty(item, ['res', '#text'])) {
+      newItem.uri = item['res']['#text'] // HTML entity encoded, URI encoded
+      newItem.sid = await getMusicServiceId(newItem.uri)
+      newItem.serviceName = getMusicServiceName(newItem.sid)
+    }
+    if (isTruthyProperty(item, ['r:description'])) { // my sonos
+      newItem.description = item['r:description'] 
+    } 
+    if (isTruthyProperty(item, ['upnp:class'])) {
+      newItem.upnpClass = item['upnp:class']
+    }
+    // artURI (cover) maybe an array (one for each track) then choose first
+    let artUri = ''
+    if (isTruthyProperty(item, ['upnp:albumArtURI'])) {
+      artUri = item['upnp:albumArtURI']
+      if (Array.isArray(artUri)) {
+        if (artUri.length > 0) {
+          newItem.artUri = artUri[0]
+        }
+      } else {
+        newItem.artUri = artUri
+      }
+    }
+    // special case My Sonos favorites. It include metadata in DIDL-lite format.
+    // these metadata include the original title, original upnp:class (processingType)
+    if (isTruthyProperty(item, ['r:resMD'])) {
+      newItem.metadata = item['r:resMD']
+    }
+    return newItem
+  })
+  )
+  return transformedItems  // properties see transformedItems definition
+}

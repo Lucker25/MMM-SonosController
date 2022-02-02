@@ -38,14 +38,14 @@
 }
 
 .AdditionalController #artist {
-  font-size: 1.5rem;
+  font-size: 0.8em;
 }
 .AdditionalController .titleDiv {
   text-align: left;
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%;
+  width: 50%;
   justify-content: flex-start;
   max-width: 60%;
 }
@@ -54,7 +54,7 @@
 }
 
 .AdditionalController .title {
-  font-size: 2.2rem;
+  font-size: 1.1em;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
@@ -66,7 +66,7 @@
   box-shadow: 0;
   border: none;
   background-color: transparent;
-  font-size: 3.4rem;
+  font-size: 2em;
 }
 
 .AdditionalController .btnClass:active {
@@ -89,10 +89,10 @@
 
 .AdditionalController .volumeSlider {
   width: 80%;
-  height: 0.8rem;
+  height:2vh;
   -webkit-appearance: none;
   background: #5f5f5f9d;
-  border-radius: 1rem;
+  border-radius: 1em;
   outline: none;
   opacity: 0.7;
   -webkit-transition: 0.2s;
@@ -102,15 +102,15 @@
 .AdditionalController .volumeSlider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.8em;
+  height: 2.8em;
   border-radius: 50%;
   background: #8a8a8a;
   cursor: pointer;
 }
 .AdditionalController .volumeSlider.active::-webkit-slider-thumb {
-  width: 2.9rem;
-  height: 2.9rem;
+  width: 3.5em;
+  height: 3.5em;
   background: wheat;
 }
 

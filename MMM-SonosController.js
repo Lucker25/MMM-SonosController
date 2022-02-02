@@ -167,24 +167,24 @@ Module.register("MMM-SonosController", {
     //    if (this.config.zoneName != payload.group.Name) might want to implement different zones
     switch (notification) {
       case "SET_SONOS_CURRENT_TRACK":
-        this.wrapper.querySelector("#title").innerHTML = payload.track.title;
-        if (payload.track.albumArtURI != null) {
+        this.wrapper.querySelector("#title").innerHTML = payload.track.Title;
+        if (payload.track.AlbumArtUri != null) {
           this.wrapper.querySelector("#cover").style.display = "block";
-          this.wrapper.querySelector("#cover").src = payload.track.albumArtURI;
+          this.wrapper.querySelector("#cover").src = payload.track.AlbumArtUri;
           this.wrapper.querySelector("#titleDiv").classList.remove("noCover");
         } else {
           this.wrapper.querySelector("#cover").style.display = "none";
           this.wrapper.querySelector("#titleDiv").classList.add("noCover");
         }
 
-        if (payload.track.duration == 0) {
+        if (!payload.track.Duration) {
           this.wrapper.querySelector("#backButton").style.display = "none";
           this.wrapper.querySelector("#nextButton").style.display = "none";
         } else {
           this.wrapper.querySelector("#backButton").style.display = "";
           this.wrapper.querySelector("#nextButton").style.display = "";
         }
-        this.wrapper.querySelector("#artist").innerHTML = payload.track.artist;
+        this.wrapper.querySelector("#artist").innerHTML = payload.track.Artist;
         break;
       case "SET_SONOS_PLAY_STATE":
         this.setState(payload.state);
@@ -192,11 +192,10 @@ Module.register("MMM-SonosController", {
       case "SET_SONOS_VOLUME":
         let volumeSlider = this.wrapper.querySelector("#volumeSlider");
         if (volumeSlider.dragged == true) return;
-        console.log("setvolume", payload.volume);
         this.wrapper.querySelector("#volumeSlider").value = payload.volume;
         break;
       case "SET_SONOS_FAVORITES":
-        if (this.config.showFavorites) this.createList(payload.items);
+        this.createList(payload.Result);
         break;
       default:
         break;
@@ -210,6 +209,7 @@ Module.register("MMM-SonosController", {
   },
   favListDiv: null,
   createList: function (items) {
+    console.log(items)
     let that = this;
     if (this.favListDiv == null) {
       this.favListDiv = document.createElement("div");
@@ -219,19 +219,19 @@ Module.register("MMM-SonosController", {
         this.favListDiv.removeChild(this.favListDiv.lastChild);
       }
     }
-    items.sort((a, b) => a.title > b.title);
+    if (!this.config.showFavorites)  this.favListDiv.style.display = "none"; 
+    items.sort((a, b) => a.Title > b.Title);
     items.map((item) => {
       console.log(item);
       let span = document.createElement("span");
-      span.innerHTML = item.title;
+      span.innerHTML = item.Title;
       span.className = "favoriteListElement";
       span.addEventListener("click", function (e) {
-        console.log(item.title);
+        console.log(item.Title);
         that.sendSocketNotification("SET_SONOS_URI", item);
       });
       this.favListDiv.appendChild(span);
     });
-
     this.wrapper.appendChild(this.favListDiv);
     this.wrapper.querySelector("#controlDiv").classList.add("withFav");
   },
@@ -241,9 +241,9 @@ Module.register("MMM-SonosController", {
     var image = document.createElement("i");
     playButton.innerHTML = "";
 
-    if (state == "playing") {
+    if (state == "PLAYING") {
       image.className = "fas fa-pause";
-    } else if (state == "paused" || state == "stopped") {
+    } else if (state == "PAUSED" || state == "STOPPED") {
       image.className = "fas fa-play";
     } else {
       image.className = "fas fa-hourglass-start";
