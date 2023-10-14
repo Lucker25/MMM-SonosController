@@ -1,0 +1,16 @@
+{
+  "name": "mmm-sonoscontroller",
+  "version": "1.0.0",
+  "description": "{",
+  "main": "MMM-SonosController.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@svrooij/sonos": "^2.4.1",
+    "request": "^2.88.2"
+  }
+}
