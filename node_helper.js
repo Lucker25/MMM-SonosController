@@ -3,8 +3,10 @@ const NodeHelper = require("node_helper");
 //const Sonos = require("../../node_modules/sonos");
 //const Helpers = require("../../node_modules/sonos/lib/helpers");
 const request = require("request");
-const SonosManager = require("../../node_modules/@svrooij/sonos").SonosManager
-const SonosEvents = require('../../node_modules/@svrooij/sonos/lib/models/sonos-events').SonosEvents
+const SonosManager = require("./node_modules/@svrooij/sonos").SonosManager
+const SonosEvents = require('./node_modules/@svrooij/sonos/lib/models/sonos-events').SonosEvents
+//const SonosManager = require("../../node_modules/@svrooij/sonos").SonosManager
+//const SonosEvents = require('../../node_modules/@svrooij/sonos/lib/models/sonos-events').SonosEvents
 const { XMLParser } = require('../../node_modules/fast-xml-parser')
 const parser = require('../../node_modules/fast-xml-parser')
 
@@ -16,7 +18,7 @@ module.exports = NodeHelper.create({
   sonos: null,
   library: null,
   zone: "Küche",
-
+  tempCover: null, 
   init: function () {
     let that = this;
     this.manager = new SonosManager()
@@ -30,8 +32,9 @@ module.exports = NodeHelper.create({
         
         d.Events.on(SonosEvents.CurrentTrackMetadata, metadata => {
           //console.log('Current Track metadata for %s', d.Name)
-          this.sendSocketNotification("SET_SONOS_CURRENT_TRACK", {track:metadata
-          });
+          //if (metadata != undefined)
+            if (!metadata.AlbumArtUri) metadata.AlbumArtUri = this.tempCover; 
+            this.sendSocketNotification("SET_SONOS_CURRENT_TRACK", {track:metadata});
         })
         d.Events.on(SonosEvents.CurrentTransportState, state => {
           //console.log('New state for %s %s', d.Name, state)
@@ -89,8 +92,9 @@ module.exports = NodeHelper.create({
         this.manager.devices[0].SetVolume(payload.volume)
         break;
       case "SET_SONOS_URI":
-        
-          this.play(payload);
+        if (payload.AlbumArtUri) this.tempCover = payload.AlbumArtUri
+
+        this.play(payload);
         
         break;
       default:
@@ -104,7 +108,8 @@ module.exports = NodeHelper.create({
     that.getLibrary()
     that.manager.Devices[0].GetState().then( d=> {
       //console.log(d);
-      this.sendSocketNotification("SET_SONOS_CURRENT_TRACK", {"track":d.positionInfo.TrackMetaData});
+      //if (d.positionInfo.TrackMetaData != undefined)
+        this.sendSocketNotification("SET_SONOS_CURRENT_TRACK", {"track":d.positionInfo.TrackMetaData});
       this.sendSocketNotification("SET_SONOS_VOLUME", {"volume":d.volume});
       this.sendSocketNotification("SET_SONOS_PLAY_STATE", {"state":d.transportState});
 
@@ -119,7 +124,7 @@ module.exports = NodeHelper.create({
   },
 
   async play(meta) {
-    console.log(meta)
+    //console.log(meta)
     let device = this.manager.devices[0]
     //this.manager.devices[0].SetAVTransportURI(meta.TrackUri)
       /*this.manager.devices[0].SetAVTransportURI({
@@ -136,14 +141,14 @@ module.exports = NodeHelper.create({
       const foundIndex = favoritesArray.findIndex((item) => {
         return (item.title.includes(meta.Title))
       })
-      console.log(favoritesArray[foundIndex])
+      //console.log(favoritesArray[foundIndex])
 
       const exportData = {
         'uri': favoritesArray[foundIndex].uri,
         'metadata': favoritesArray[foundIndex].metadata,
         'queue': (favoritesArray[foundIndex].processingType === 'queue')
       }
-      console.log(exportData)
+      //console.log(exportData)
       if (exportData.queue) {
         await device.AVTransportService.RemoveAllTracksFromQueue()
         await device.AVTransportService.AddURIToQueue({

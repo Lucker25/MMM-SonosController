@@ -156,22 +156,32 @@ Module.register("AdditionalController", {
   start: function () {
     let that = this;
     Log.info("Starting module: " + this.name, this);
+    
   },
+  tempAlbum: "",
   sonos: {
     zone: ""
   },
   notificationReceived: function (notification, payload, sender) {
+    let that = this; 
     if (sender == undefined) return;
     if(sender.name != this.config.hostController) return;
     //    if (this.config.zoneName != payload.group.Name) might want to implement different zones
     switch (notification) {
       case "SET_SONOS_CURRENT_TRACK":
-        this.wrapper.querySelector("#title").innerHTML = payload.track.Title;
+        this.wrapper.querySelector("#title").innerHTML = payload.track.Title.length > 50 ? "loading" : payload.track.Title;
+        console.warn("tempAlbum", that.tempAlbum)
         if (payload.track.AlbumArtUri != null) {
           this.wrapper.querySelector("#cover").style.display = "block";
           this.wrapper.querySelector("#cover").src = payload.track.AlbumArtUri;
           this.wrapper.querySelector("#titleDiv").classList.remove("noCover");
-        } else {
+        } 
+        else if (that.tempAlbum != ""){
+          this.wrapper.querySelector("#cover").style.display = "block";
+          this.wrapper.querySelector("#cover").src = that.tempAlbum;
+          this.wrapper.querySelector("#titleDiv").classList.remove("noCover");
+        }
+        else {
           this.wrapper.querySelector("#cover").style.display = "none";
           this.wrapper.querySelector("#titleDiv").classList.add("noCover");
         }
@@ -183,7 +193,8 @@ Module.register("AdditionalController", {
           this.wrapper.querySelector("#backButton").style.display = "";
           this.wrapper.querySelector("#nextButton").style.display = "";
         }
-        this.wrapper.querySelector("#artist").innerHTML = payload.track.Artist;
+        if (payload.track.Artist) this.wrapper.querySelector("#artist").innerHTML = payload.track.Artist.indexOf("BUFFERING") > -1 ? "loading": payload.track.Artist;
+        else this.wrapper.querySelector("#artist").innerHTML  = ""
         break;
       case "SET_SONOS_PLAY_STATE":
         this.setState(payload.state);
@@ -220,7 +231,7 @@ Module.register("AdditionalController", {
       span.innerHTML = item.Title;
       span.className = "favoriteListElement";
       span.addEventListener("click", function (e) {
-        console.log(item.Title);
+        that.tempAlbum = item.AlbumArtUri;
         that.sendNotification("SET_SONOS_URI", item);
       });
       this.favListDiv.appendChild(span);

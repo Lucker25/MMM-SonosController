@@ -167,12 +167,18 @@ Module.register("MMM-SonosController", {
     //    if (this.config.zoneName != payload.group.Name) might want to implement different zones
     switch (notification) {
       case "SET_SONOS_CURRENT_TRACK":
-        this.wrapper.querySelector("#title").innerHTML = payload.track.Title;
+        this.wrapper.querySelector("#title").innerHTML = payload.track.Title.length > 30 ? "loading" : payload.track.Title;
         if (payload.track.AlbumArtUri != null) {
           this.wrapper.querySelector("#cover").style.display = "block";
           this.wrapper.querySelector("#cover").src = payload.track.AlbumArtUri;
           this.wrapper.querySelector("#titleDiv").classList.remove("noCover");
-        } else {
+        }
+        else if (this.tempAlbum != ""){
+          this.wrapper.querySelector("#cover").style.display = "block";
+          this.wrapper.querySelector("#cover").src = this.tempAlbum;
+          this.wrapper.querySelector("#titleDiv").classList.remove("noCover");
+        }
+        else {
           this.wrapper.querySelector("#cover").style.display = "none";
           this.wrapper.querySelector("#titleDiv").classList.add("noCover");
         }
@@ -184,7 +190,8 @@ Module.register("MMM-SonosController", {
           this.wrapper.querySelector("#backButton").style.display = "";
           this.wrapper.querySelector("#nextButton").style.display = "";
         }
-        this.wrapper.querySelector("#artist").innerHTML = payload.track.Artist;
+        if (payload.track.Artist) this.wrapper.querySelector("#artist").innerHTML = payload.track.Artist.indexOf("BUFFERING") > -1 ? "loading": payload.track.Artist;
+        else this.wrapper.querySelector("#artist").innerHTML  = ""
         break;
       case "SET_SONOS_PLAY_STATE":
         this.setState(payload.state);
@@ -208,8 +215,8 @@ Module.register("MMM-SonosController", {
 
   },
   favListDiv: null,
+  tempAlbum: "", 
   createList: function (items) {
-    console.log(items)
     let that = this;
     if (this.favListDiv == null) {
       this.favListDiv = document.createElement("div");
@@ -222,12 +229,11 @@ Module.register("MMM-SonosController", {
     if (!this.config.showFavorites)  this.favListDiv.style.display = "none"; 
     items.sort((a, b) => a.Title > b.Title);
     items.map((item) => {
-      console.log(item);
       let span = document.createElement("span");
       span.innerHTML = item.Title;
       span.className = "favoriteListElement";
       span.addEventListener("click", function (e) {
-        console.log(item.Title);
+        that.tempAlbum = item.AlbumArtUri;
         that.sendSocketNotification("SET_SONOS_URI", item);
       });
       this.favListDiv.appendChild(span);
